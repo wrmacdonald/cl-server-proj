@@ -16,6 +16,7 @@ class User(db.Model):
     email = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(120), nullable=False)
     image = db.Column(db.String(120), nullable=False)
+    audio_files = db.relationship('Audio', backref='user', lazy=True)
 
     def __init__(self, name, email, address, image):
         self.name = name
@@ -24,13 +25,29 @@ class User(db.Model):
         self.image = image
 
 
+class Audio(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    session_id = db.Column(db.Integer, nullable=False, unique=True)
+    ticks = db.Column(db.String(1000), nullable=False)
+    selected_tick = db.Column(db.Integer, nullable=False)
+    step_count = db.Column(db.Integer, nullable=False)
+
+    def __init__(self, user_id, session_id, ticks, selected_tick, step_count):
+        self.user_id = user_id
+        self.session_id = session_id
+        self.ticks = ticks
+        self.selected_tick = selected_tick
+        self.step_count = step_count
+
+
 db.create_all()
 db.session.commit()
 
 app.logger.info('App running successfully!')
 
 
-# -- Users --
+# -- User Routes --
 @app.route("/users", methods=['GET'])
 def get_users():
     """ Get all users """
@@ -95,7 +112,7 @@ def delete_user(id):
     return "user deleted"
 
 
-@app.route("/search", methods=['GET'])
+@app.route("/search_user", methods=['GET'])
 def search_user():
     """ Search user by id, name, email, or address """
     id = request.args.get('id')
@@ -126,6 +143,33 @@ def search_user():
             results.append(user.__dict__)
 
     return jsonify(results)
+
+
+# -- TODO: Audio Routes --
+@app.route("/user/<id>/audio", methods=['GET'])
+def get_audio(id):
+    """ Get all a user's audio files """
+    user = User.query.get(id)
+    audio_files = []
+    pass
+
+
+@app.route("/user/<id>/audio", methods=['POST'])
+def post_audio():
+    """ Post a user's audio file """
+    pass
+
+
+@app.route("/user/<id>/audio", methods=['PUT'])
+def post_audio():
+    """ Update a user's audio file """
+    pass
+
+
+@app.route("/search_audio", methods=['GET'])
+def search_sid():
+    """ Search for audio file with session id """
+    pass
 
 
 # if __name__ == '__main__':
