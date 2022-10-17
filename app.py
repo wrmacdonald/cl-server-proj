@@ -1,8 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -71,7 +69,20 @@ def create_user():
     """ Create a user """
     body = request.get_json()
 
-    # TODO: validate user
+    # Validate user
+    error = None
+
+    if 'name' not in body.keys():
+        error = 'missing name param'
+    if 'email' not in body.keys():
+        error = 'missing email param'
+    if 'address' not in body.keys():
+        error = 'missing address param'
+    if 'image' not in body.keys():
+        error = 'missing image param'
+
+    if error:
+        return 'error: ' + error
 
     user = User(
         name=body['name'],
@@ -145,30 +156,73 @@ def search_user():
     return jsonify(results)
 
 
-# -- TODO: Audio Routes --
+# -- Audio Routes --
 @app.route("/user/<id>/audio", methods=['GET'])
 def get_audio(id):
     """ Get all a user's audio files """
-    user = User.query.get(id)
     audio_files = []
-    pass
+    for audio in User.query.get(id).audio_files:
+        del audio.__dict__['_sa_instance_state']
+        audio_files.append(audio.__dict__)
+    return jsonify(audio_files)
 
 
 @app.route("/user/<id>/audio", methods=['POST'])
-def post_audio():
+def post_audio(id):
     """ Post a user's audio file """
-    pass
+    body = request.get_json()
+
+    # Validate audio data
+    error = None
+
+    if 'ticks' not in body.keys():
+        error = 'missing ticks param'
+        return 'Error: ' + error
+    if len(body['ticks']) != 15:
+        error = 'ticks does not have 15 values'
+    for tick in body['ticks']:
+        if tick > -10.0 or tick < -100.0:
+            error = 'ticks not in range (-10.0 to -100.0)'
+
+    if 'step_count' not in body.keys():
+        error = 'missing step_count param'
+        return 'Error: ' + error
+    if not 0 <= body['step_count'] <= 9:
+        error = 'step_count has invalid value'
+
+    if 'selected_tick' not in body.keys():
+        error = 'missing selected_tick param'
+        return 'Error: ' + error
+    if not 0 <= body['selected_tick'] <= 14:
+        error = 'selected_tick has invalid value'
+
+    if error:
+        return 'Error: ' + error
+
+    audio = Audio(
+        user_id=id,
+        session_id=body['session_id'],
+        ticks=body['ticks'],
+        selected_tick=body['selected_tick'],
+        step_count=body['step_count'],
+    )
+
+    db.session.add(audio)
+    db.session.commit()
+    db.session.flush()
+
+    return 'successfully saved audio'
 
 
 @app.route("/user/<id>/audio", methods=['PUT'])
-def post_audio():
-    """ Update a user's audio file """
+def update_audio():
+    """ TODO: Update a user's audio file """
     pass
 
 
 @app.route("/search_audio", methods=['GET'])
 def search_sid():
-    """ Search for audio file with session id """
+    """ TODO: Search for audio file with session id """
     pass
 
 
