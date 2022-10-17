@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  flask-app:
+    container_name: flask-app
+    image: flask-app
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db1:5432/postgres
+    depends_on:
+      - db1
+
+  db1:
+    container_name: db1
+    image: postgres:12
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+
+volumes:
+  pgdata: {}
