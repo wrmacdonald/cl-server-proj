@@ -66,11 +66,66 @@ def create_user():
     db.session.add(user)
     db.session.commit()
     db.session.flush()
-    # app.logger.info(user.id)
 
     new_user = User.query.get(user.id)                      # get newly inserted user
     del new_user.__dict__['_sa_instance_state']
     return jsonify(new_user.__dict__)
+
+
+@app.route("/user/<id>", methods=['PUT'])
+def update_user(id):
+    """ Update a user by id """
+    body = request.get_json()
+    user_dict = dict(
+        name=body['name'],
+        email=body['email'],
+        address=body['address'],
+        image=body['image'],
+    )
+    db.session.query(User).filter_by(id=id).update(user_dict)
+    db.session.commit()
+    return "user updated"
+
+
+@app.route("/user/<id>", methods=['DELETE'])
+def delete_user(id):
+    """ Delete a user by id """
+    db.session.query(User).filter_by(id=id).delete()
+    db.session.commit()
+    return "user deleted"
+
+
+@app.route("/search", methods=['GET'])
+def search_user():
+    """ Search user by id, name, email, or address """
+    id = request.args.get('id')
+    name = request.args.get('name')
+    email = request.args.get('email')
+    address = request.args.get('address')
+
+    results = []
+
+    if id:
+        query_res = db.session.query(User).filter_by(id=id).first()
+        del query_res.__dict__['_sa_instance_state']
+        results.append(query_res.__dict__)
+    elif name:
+        query_res = db.session.query(User).filter(User.name.like("%" + name + "%")).all()
+        for user in query_res:
+            del user.__dict__['_sa_instance_state']
+            results.append(user.__dict__)
+    elif email:
+        query_res = db.session.query(User).filter(User.email.like("%" + email + "%")).all()
+        for user in query_res:
+            del user.__dict__['_sa_instance_state']
+            results.append(user.__dict__)
+    elif address:
+        query_res = db.session.query(User).filter(User.address.like("%" + address + "%")).all()
+        for user in query_res:
+            del user.__dict__['_sa_instance_state']
+            results.append(user.__dict__)
+
+    return jsonify(results)
 
 
 # if __name__ == '__main__':
