@@ -5,6 +5,8 @@ import os
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 
@@ -69,7 +71,7 @@ def create_user():
     """ Create a user """
     body = request.get_json()
 
-    # Validate user
+    # Validate user (all fields required)
     error = None
 
     if 'name' not in body.keys():
@@ -214,16 +216,32 @@ def post_audio(id):
     return 'successfully saved audio'
 
 
-@app.route("/user/<id>/audio", methods=['PUT'])
-def update_audio():
-    """ TODO: Update a user's audio file """
-    pass
+@app.route("/user/<id>/audio/<session_id>", methods=['PUT'])
+def update_audio(id, session_id):
+    """ Update a user's audio file """
+    body = request.get_json()
+    audio_dict = dict(
+        user_id=id,
+        session_id=session_id,
+        ticks=body['ticks'],
+        selected_tick=body['selected_tick'],
+        step_count=body['step_count'],
+    )
+    db.session.query(Audio).filter_by(session_id=session_id).update(audio_dict)
+    db.session.commit()
+    return "audio updated"
 
 
 @app.route("/search_audio", methods=['GET'])
 def search_sid():
-    """ TODO: Search for audio file with session id """
-    pass
+    """ Search for audio file with session id """
+    session_id = request.args.get('session_id')
+    results = []
+    if session_id:
+        query_res = db.session.query(Audio).filter_by(session_id=session_id).first()
+        del query_res.__dict__['_sa_instance_state']
+        results.append(query_res.__dict__)
+    return jsonify(results)
 
 
 # if __name__ == '__main__':
